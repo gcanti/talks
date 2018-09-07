@@ -4,7 +4,7 @@
 
 # Self Introduction
 
-- Giulio Canti (@gcanti)
+- Giulio Canti (@GiulioCanti)
 - Degree in mathematics
 - Writing and teaching TypeScript and functional programming for the past 2 years
 
@@ -283,7 +283,11 @@ const add = (text: string): Action => ({
   type: 'ADD_TODO',
   text
 })
-const update = (id: number, text: string, completed: boolean): Action => ({
+const update = (
+  id: number,
+  text: string,
+  completed: boolean
+): Action => ({
   type: 'UPDATE_TODO',
   id,
   text,
@@ -805,5 +809,5 @@ const SomeView = match(
 
 ### Functional programming
 
-- Free book https://github.com/gcanti/functional-programming
+- Free book (italian) https://github.com/gcanti/functional-programming
 - TypeScript library https://github.com/gcanti/fp-ts

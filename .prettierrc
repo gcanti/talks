@@ -1,0 +1,6 @@
+{
+"printWidth": 60,
+"parser": "markdown",
+"semi": false,
+"singleQuote": true
+}
