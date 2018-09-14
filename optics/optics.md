@@ -708,7 +708,7 @@ console.log(nameFirstLetter.modify(toUpperCase)(a1))
 
 # Thanks
 
-- Slides https://github.com/gcanti/talks/optics
+- Slides https://github.com/gcanti/talks/tree/master/optics
 
 ### Functional programming
 

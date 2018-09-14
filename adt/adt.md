@@ -63,7 +63,7 @@ x, y, z, ... ∈ I
 
 ---
 
-Two common members of this family are `n`-tuples, where `I` is a non empty interval of natural numbers...
+Two common members of this family are `n`-tuples, where `I` is a non empty interval of natural numbers
 
 ```ts
 ￼type Tuple1 = [string] // I = [0]
@@ -71,9 +71,16 @@ type Tuple2 = [string, number] // I = [0, 1]
 type Tuple3 = [string, number, boolean] // I = [0, 1, 2]
 ```
 
+Accessing by index
+
+```ts
+type Fst = Tuple2[0] // string
+type Snd = Tuple2[1] // number
+```
+
 ---
 
-...and records, where `I` is a set of labels.
+and records, where `I` is a set of labels.
 
 ```ts
 // I = {"name", "age"}
@@ -81,6 +88,13 @@ interface Person {
   name: string
   age: number
 }
+```
+
+Accessing by label
+
+```ts
+type Name = Person['name'] // string
+type Age = Person['age'] // number
 ```
 
 ---
@@ -402,7 +416,7 @@ type Option<A> =
 
 # When should you use a sum type?
 
-When its components would be **dependen**t if implemented as a product type.
+When its components would be **dependent** if implemented as a product type.
 
 ---
 
@@ -746,7 +760,7 @@ interface Model {
 TypeScript will force you to handle all cases
 
 ```tsx
-const SomeView = ({ items }: Model) => {
+const SomeView = ({ items }: Model): ReactElement<any> => {
   switch (items.type) {
     case 'NotAsked' :
       return <div>Please press the button to load the items</div>
@@ -767,21 +781,22 @@ const SomeView = ({ items }: Model) => {
 Or, using a more functional style, let's define a `match` function that can be re-utilised in more use cases
 
 ```ts
-const match = <O>(
+const match = <E, D, O>(
+  rd: RemoteData<E, D>,
   notAsked: () => O,
   loading: () => O,
-  failure: (error: HttpError) => O,
-  success: (data: Array<Item>) => O
-): (model: Model) => O {
-  switch (items.type) {
+  failure: (error: E) => O,
+  success: (data: D) => O
+): O {
+  switch (rd.type) {
     case 'NotAsked' :
       return notAsked()
     case 'Loading' :
       return loading()
     case 'Failure' :
-      return failure(items.error)
+      return failure(rd.error)
     case 'Success' :
-      return success(items.data)
+      return success(rd.data)
   }
 }
 ```
@@ -792,20 +807,23 @@ const match = <O>(
 
 Now `SomeView` can be defined as
 
-```ts
-const SomeView = match(
-  () => <div>Please press the button to load the items</div>,
-  () => <div>Loading items...</div>,
-  error => <div>An error has occurred {error}</div>,
-  data => <div>{data.map(item => { ... })}</div>
-)
+```tsx
+const SomeView = ({ items }: Model): ReactElement<any> => {
+  return match(
+    items,
+    () => <div>Please press the button to load the items</div>,
+    () => <div>Loading items...</div>,
+    error => <div>An error has occurred {error}</div>,
+    data => <div>{data.map(item => { ... })}</div>
+  )
+}
 ```
 
 ---
 
 # Thanks
 
-- Slides https://github.com/gcanti/talks/adt
+- Slides https://github.com/gcanti/talks/tree/master/adt
 
 ### Functional programming
 
