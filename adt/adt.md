@@ -269,17 +269,17 @@ Sum types correspond to **disjoint unions** of sets.
 ```ts
 type Action =
   | {
-      type: 'ADD_TODO'
+      type: 'ADD_TODO' // string literal type
       text: string
     }
   | {
-      type: 'UPDATE_TODO'
+      type: 'UPDATE_TODO' // string literal type
       id: number
       text: string
       completed: boolean
     }
   | {
-      type: 'DELETE_TODO'
+      type: 'DELETE_TODO' // string literal type
       id: number
     }
 ```
