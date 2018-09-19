@@ -338,7 +338,7 @@ const del = (id: number): Action => ({
 ```ts
 type State = Array<Todo>
 
-//                 the return type is important ↓
+//                  please note the return type ↓
 function reducer(state: State, action: Action): State {
   //      ↓ switch on the tag field
   switch (action.type) {
