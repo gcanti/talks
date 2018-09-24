@@ -543,7 +543,7 @@ const match = <A, O>(
     fa: Option<A>,
     whenNone: O,
     whenSome: (a: A) => O
-  ): R {
+  ): O => {
   switch (fa.type) {
     case 'None' :
       return whenNone
@@ -634,11 +634,11 @@ const match = <L, R, O>(
     fa: Either<L, R>,
     whenLeft: (left: L) => O,
     whenRight: (right: R) => O
-  ): R {
+  ): O => {
   switch (fa.type) {
     case 'Left' :
       return whenLeft(fa.left)
-    case 'Some' :
+    case 'Right' :
       return whenRight(fa.right)
   }
 }
