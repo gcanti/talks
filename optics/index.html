@@ -47,7 +47,51 @@
 
     # Introduction
 
-    This tutorial assumes that our data structures are immutable. To see why we might want to consider optics, we'll look at a simple example. We'll define two interfaces
+    Benefits of programming with immutable objects (\*)
+
+    - Thread safety
+    - No invalid state
+    - Better encapsulation
+    - Simpler to test
+    - More readable and maintainable code
+
+    (\*) https://hackernoon.com/5-benefits-of-immutable-objects-worth-considering-for-your-next-project-f98e7e85b6ac
+
+    ---
+
+    # Introduction
+
+    **Thread safety**. Given that by definition an immutable object cannot be changed, you will not have any synchronization issues when using them.
+
+    ---
+
+    # Introduction
+
+    **No invalid state**. Once you are given an immutable object and verify its state, you know it will always remain safe.
+
+    ---
+
+    # Introduction
+
+    **Better encapsulation**. Since you know the object won’t change, anytime you pass this object to another method you can be positive that doing so will not alter the original state of that object in the calling code (no defensive copying).
+
+    ---
+
+    # Introduction
+
+    **Simpler to test**. When your code is designed in a way that lead to less side effects, there are less confusing code paths to track down.
+
+    ---
+
+    # Introduction
+
+    **More readable and maintainable code**. Any piece of code working against an immutable object does not need to be concerned with affecting other areas of your code using that object. This means there are less intermingled and moving parts in your code.
+
+    ---
+
+    # Introduction
+
+    This talk assumes that our data structures are immutable. To see why we might want to consider optics, we'll look at a simple example. We'll define two interfaces
 
     ```ts
     interface Address {
@@ -739,9 +783,16 @@
 
     - Free book (italian) https://github.com/gcanti/functional-programming
     - TypeScript library https://github.com/gcanti/monocle-ts
-
-  </textarea>
+      </textarea>
   <script src="../remark.js">
+
+
+
+
+
+
+
+
 
 
 
