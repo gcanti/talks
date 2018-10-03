@@ -487,16 +487,22 @@ In our case, the first character of a string is **optional** as a string might b
 
 # `Prism`
 
-`Lens`es manage product types.
+`Lens`es manage **product types**
 
-`Prism`s manage sum types.
+(a.k.a. cartesian products)
+
+`Prism`s manage **sum types**
+
+(a.k.a. disjoint unions)
 
 ---
 
 # `Prism`
 
+A sum type
+
 ```ts
-type Action =
+type S =
   | {
       type: 'ADD_TODO'
       text: string
@@ -517,7 +523,7 @@ type Action =
 
 # `Prism`
 
-Let's focus on `ADD_TODO`.
+Let's focus on `ADD_TODO` and let `A = string`.
 
 Given a `string` we can build an `Action`
 
@@ -528,7 +534,17 @@ const reverseGet = (text: string): Action => ({
 })
 ```
 
-What about the other direction?
+---
+
+# `Prism`
+
+What about the other direction? Can we define the following function?
+
+```ts
+get: (s: S) => string // ← this is a lie
+```
+
+What if `s` is a `DELETE_TODO`?
 
 We need a type that represents the effect of a computation that can fail.
 
@@ -536,16 +552,24 @@ We need a type that represents the effect of a computation that can fail.
 
 # `Option`
 
+`Option<A>` represents the effect of a computation that can fail
+
 ```ts
-// type
 type Option<A> =
   | { type: 'None' }
   | {
       type: 'Some'
       value: A
     }
+```
 
-// constructors
+---
+
+# `Option`
+
+Constructors
+
+```ts
 const none: Option<never> = { type: 'None' }
 
 const some = <A>(a: A): Option<A> => ({
@@ -558,8 +582,9 @@ const some = <A>(a: A): Option<A> => ({
 
 # `Option`
 
+Pattern matching
+
 ```ts
-// pattern matching
 const match = <A, R>(
   fa: Option<A>,
   whenNone: R,
@@ -567,8 +592,15 @@ const match = <A, R>(
 ): R => {
   return fa.type === 'None' ? whenNone : whenSome(fa.value)
 }
+```
 
-// sequencing
+---
+
+# `Option`
+
+Sequencing
+
+```ts
 const chain = <A, B>(
   fa: Option<A>,
   f: (a: A) => Option<B>
@@ -579,12 +611,14 @@ const chain = <A, B>(
 
 # `Prism`
 
+We can define `getOption` instead of `get`
+
 ```ts
-const getOption = (action: Action): Option<string> =>
-  action.type === 'ADD_TODO' ? some(action.text) : none
+const getOption = (s: S): Option<string> =>
+  s.type === 'ADD_TODO' ? some(s.text) : none
 ```
 
-<center><img src="img/Prism.png" width="400"></center>
+<center><img src="img/Prism.png" width="350"></center>
 
 ---
 
@@ -615,11 +649,11 @@ Laws
 # `Prism`
 
 ```ts
-const ADD_TODO = new Prism<Action, string>(
+const ADD_TODO = new Prism<S, string>(
   s => (s.type === 'ADD_TODO' ? some(s.text) : none),
   a => ({
     type: 'ADD_TODO',
-    text
+    text: a
   })
 )
 ```
@@ -666,9 +700,10 @@ class Prism<S, A> {
 
 # `Prism`
 
-Decoders + Encoders are `Prism`s
+Codecs (\*) are `Prism`s
 
 ```ts
+// a codec
 const numberFromString = new Prism<string, number>(
   s => {
     const n = +s
@@ -678,6 +713,8 @@ const numberFromString = new Prism<string, number>(
 )
 ```
 
+(\*) Codec = Decoder + Encoder
+
 ---
 
 # `Prism`
@@ -685,6 +722,7 @@ const numberFromString = new Prism<string, number>(
 Refinements are `Prism`s
 
 ```ts
+// a codec
 const numberFromString = new Prism<string, number>(
   s => {
     const n = +s
@@ -693,6 +731,7 @@ const numberFromString = new Prism<string, number>(
   a => String(a)
 )
 
+// a refinement
 const integer = new Prism<number, number>(
   s => (s % 1 === 0 ? some(s) : none),
   a => a
@@ -706,6 +745,7 @@ const integer = new Prism<number, number>(
 And we can compose them
 
 ```ts
+// a codec
 const numberFromString = new Prism<string, number>(
   s => {
     const n = +s
@@ -714,6 +754,7 @@ const numberFromString = new Prism<string, number>(
   a => String(a)
 )
 
+// a refinement
 const integer = new Prism<number, number>(
   s => (s % 1 === 0 ? some(s) : none),
   a => a
@@ -751,6 +792,16 @@ class Optional<S, A> {
 
 # `Optional`
 
+Laws
+
+- `match(getOption(s), s, a => set(a)(s)) = s`
+- `getOption(set(a)(s)) = getOption(s).map(_ => a)`
+- `set(a)(set(a)(s)) = set(a)(s)`
+
+---
+
+# `Optional`
+
 Example
 
 ```ts
@@ -763,6 +814,22 @@ console.log(firstLetter.getOption('hi!')) // => some('h')
 console.log(firstLetter.getOption('')) // => none
 console.log(firstLetter.set('H')('hi!')) // => 'Hi!'
 console.log(firstLetter.set('H')('')) // => ''
+```
+
+---
+
+# `Optional`
+
+Lifting
+
+```ts
+class Optional<S, A> {
+  ...
+  modify(f: (a: A) => A): (s: S) => S {
+    return s =>
+      match(this.getOption(s), s, a => this.set(f(a))(s))
+  }
+}
 ```
 
 ---
@@ -785,31 +852,13 @@ class Optional<S, A> {
 
 ---
 
-# `Optional`
-
-Lifting
-
-```ts
-class Optional<S, A> {
-  ...
-  modify(f: (a: A) => A): (s: S) => S {
-    return s => {
-      const oa = his.getOption(s)
-      return oa.type === 'None' ? s : this.set(f(a))(s)
-    }
-  }
-}
-```
-
----
-
 # Diagram
 
 <center><img src="img/Diagram.png" width="600"></center>
 
 ---
 
-# `Iso` -> `Lens`
+# `Iso` → `Lens`
 
 ```ts
 class Iso<S, A> {
@@ -822,7 +871,7 @@ class Iso<S, A> {
 
 ---
 
-# `Lens` -> `Optional`
+# `Lens` → `Optional`
 
 ```ts
 class Lens<S, A> {
