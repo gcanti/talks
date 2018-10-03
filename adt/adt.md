@@ -127,7 +127,10 @@ Such a isomorphism is obvious if `Person` is implemented as a class
 
 ```ts
 class Person {
-  constructor(public name: string, public age: number) {}
+  constructor(
+    readonly name: string,
+    readonly age: number
+  ) {}
 }
 ```
 
@@ -540,14 +543,14 @@ const some = <A>(a: A): Option<A> => ({
 })
 
 const match = <A, O>(
-    fa: Option<A>,
-    whenNone: O,
-    whenSome: (a: A) => O
-  ): O => {
+  fa: Option<A>,
+  whenNone: O,
+  whenSome: (a: A) => O
+): O => {
   switch (fa.type) {
-    case 'None' :
+    case 'None':
       return whenNone
-    case 'Some' :
+    case 'Some':
       return whenSome(fa.value)
   }
 }
@@ -624,21 +627,25 @@ type Either<L, R> =
 Constructors and pattern matching
 
 ```ts
-const left = <L, R>(left: L): Either<L, R> =>
-  ({ type: 'Left', left })
+const left = <L, R>(left: L): Either<L, R> => ({
+  type: 'Left',
+  left
+})
 
-const right = <L, R>(right: R): Either<L, R> =>
-  ({ type: 'Right', right })
+const right = <L, R>(right: R): Either<L, R> => ({
+  type: 'Right',
+  right
+})
 
 const match = <L, R, O>(
-    fa: Either<L, R>,
-    whenLeft: (left: L) => O,
-    whenRight: (right: R) => O
-  ): O => {
+  fa: Either<L, R>,
+  whenLeft: (left: L) => O,
+  whenRight: (right: R) => O
+): O => {
   switch (fa.type) {
-    case 'Left' :
+    case 'Left':
       return whenLeft(fa.left)
-    case 'Right' :
+    case 'Right':
       return whenRight(fa.right)
   }
 }

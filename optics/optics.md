@@ -73,6 +73,7 @@ interface Address {
   city: string
   street: Street
 }
+
 interface Street {
   num: number
   name: string
@@ -122,6 +123,12 @@ Functional optics help to manage (read, write, update) immutable data structures
 
 ---
 
+# Diagram
+
+<center><img src="img/Diagram.png" width="600"></center>
+
+---
+
 # Agenda
 
 1. Introduction
@@ -142,9 +149,10 @@ An **isomorphism** between two types `S` and `A` is a pair of functions
 
 # `Iso`
 
-Definition
+Implementation
 
 ```ts
+//        ↓  ↓ type parameters
 class Iso<S, A> {
   constructor(
     readonly get: (s: S) => A,
@@ -162,6 +170,8 @@ Laws
 - `get . reverseGet = identity`
 - `reverseGet . get = identity`
 
+<center><img src="img/Iso.png"></center>
+
 ---
 
 # `Iso`
@@ -169,10 +179,12 @@ Laws
 Examples
 
 ```ts
+//         S = meters ↓       ↓ A = kilometers
 const mTokm = new Iso<number, number>(
   m => m / 1000,
   km => km * 1000
 )
+//        S = kilometers ↓       ↓ A = miles
 const kmToMile = new Iso<number, number>(
   km => km * 0.621371,
   mile => mile / 0.621371
@@ -205,6 +217,43 @@ const mToMile = mTokm.compose(kmToMile)
 
 # `Iso`
 
+Another example
+
+```ts
+interface Person {
+  name: string
+  age: number
+}
+
+type Tuple = [string, number]
+
+const person2Tuple = new Iso<Person, Tuple>(
+  ({ name, age }) => [name, age],
+  ([name, age]) => ({ name, age })
+)
+```
+
+---
+
+# `Iso`
+
+Such a isomorphism is obvious if `Person` is implemented as a class
+
+```ts
+class PersonAsClass {
+  constructor(
+    readonly name: string,
+    readonly age: number
+  ) {}
+}
+```
+
+`constructor` implements the `reverseGet` function.
+
+---
+
+# `Iso`
+
 Lifting
 
 ```ts
@@ -215,6 +264,41 @@ class Iso<S, A> {
   }
 }
 ```
+
+`modify` lifts an _endomorphism_ on `A` to an endomorphism on `S`.
+
+```ts
+type Endomorphism<T> = (t: T) => T
+```
+
+---
+
+# `Iso`
+
+Lifting
+
+```ts
+const toUpperCaseTuple = (x: Tuple): Tuple => [
+  x[0].toUpperCase(),
+  x[1]
+]
+
+const person: Person = { name: 'john', age: 20 }
+
+const toUpperCasePerson = person2Tuple.modify(toUpperCase)
+
+toUpperCasePerson(person)
+// { name: 'JOHN', age: 20 }
+```
+
+---
+
+# Pattern
+
+- model (reading / writing)
+- implementation
+- composition
+- lifting (updating)
 
 ---
 
@@ -238,7 +322,7 @@ A lens is a first-class reference to a subpart of some data type.
 
 # `Lens`
 
-Definition
+Implementation
 
 ```ts
 class Lens<S, A> {
@@ -260,6 +344,24 @@ Laws
 - `get(set(a)(s)) = a`
 - `set(get(s))(s) = s`
 - `set(a)(set(a)(s)) = set(a)(s)`
+
+---
+
+# `Lens`
+
+Back to our problem
+
+```ts
+interface Address {
+  city: string
+  street: Street
+}
+
+interface Street {
+  num: number
+  name: string
+}
+```
 
 ---
 
@@ -306,7 +408,10 @@ class Lens<S, A> {
   compose<B>(ab: Lens<A, B>): Lens<S, B> {
     return new Lens(
       s => ab.get(this.get(s)),
-      b => s => this.set(ab.set(b)(this.get(s)))(s)
+      b => s => {
+        const a = ab.set(b)(this.get(s))
+        return this.set(a)(s)
+      }
     )
   }
 }
@@ -485,7 +590,7 @@ const getOption = (action: Action): Option<string> =>
 
 # `Prism`
 
-Definition
+Implementation
 
 ```ts
 class Prism<S, A> {

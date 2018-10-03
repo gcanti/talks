@@ -23,6 +23,7 @@
 
 <body>
   <textarea id="source">
+
     # Introduction to functional optics
 
     ---
@@ -98,6 +99,7 @@
       city: string
       street: Street
     }
+
     interface Street {
       num: number
       name: string
@@ -147,6 +149,12 @@
 
     ---
 
+    # Diagram
+
+    <center><img src="img/Diagram.png" width="600"></center>
+
+    ---
+
     # Agenda
 
     1. Introduction
@@ -167,9 +175,10 @@
 
     # `Iso`
 
-    Definition
+    Implementation
 
     ```ts
+    //        ↓  ↓ type parameters
     class Iso<S, A> {
       constructor(
         readonly get: (s: S) => A,
@@ -187,6 +196,8 @@
     - `get . reverseGet = identity`
     - `reverseGet . get = identity`
 
+    <center><img src="img/Iso.png"></center>
+
     ---
 
     # `Iso`
@@ -194,10 +205,12 @@
     Examples
 
     ```ts
+    //         S = meters ↓       ↓ A = kilometers
     const mTokm = new Iso<number, number>(
       m => m / 1000,
       km => km * 1000
     )
+    //        S = kilometers ↓       ↓ A = miles
     const kmToMile = new Iso<number, number>(
       km => km * 0.621371,
       mile => mile / 0.621371
@@ -230,6 +243,43 @@
 
     # `Iso`
 
+    Another example
+
+    ```ts
+    interface Person {
+      name: string
+      age: number
+    }
+
+    type Tuple = [string, number]
+
+    const person2Tuple = new Iso<Person, Tuple>(
+      ({ name, age }) => [name, age],
+      ([name, age]) => ({ name, age })
+    )
+    ```
+
+    ---
+
+    # `Iso`
+
+    Such a isomorphism is obvious if `Person` is implemented as a class
+
+    ```ts
+    class PersonAsClass {
+      constructor(
+        readonly name: string,
+        readonly age: number
+      ) {}
+    }
+    ```
+
+    `constructor` implements the `reverseGet` function.
+
+    ---
+
+    # `Iso`
+
     Lifting
 
     ```ts
@@ -240,6 +290,41 @@
       }
     }
     ```
+
+    `modify` lifts an _endomorphism_ on `A` to an endomorphism on `S`.
+
+    ```ts
+    type Endomorphism<T> = (t: T) => T
+    ```
+
+    ---
+
+    # `Iso`
+
+    Lifting
+
+    ```ts
+    const toUpperCaseTuple = (x: Tuple): Tuple => [
+      x[0].toUpperCase(),
+      x[1]
+    ]
+
+    const person: Person = { name: 'john', age: 20 }
+
+    const toUpperCasePerson = person2Tuple.modify(toUpperCase)
+
+    toUpperCasePerson(person)
+    // { name: 'JOHN', age: 20 }
+    ```
+
+    ---
+
+    # Pattern
+
+    - model (reading / writing)
+    - implementation
+    - composition
+    - lifting (updating)
 
     ---
 
@@ -263,7 +348,7 @@
 
     # `Lens`
 
-    Definition
+    Implementation
 
     ```ts
     class Lens<S, A> {
@@ -285,6 +370,24 @@
     - `get(set(a)(s)) = a`
     - `set(get(s))(s) = s`
     - `set(a)(set(a)(s)) = set(a)(s)`
+
+    ---
+
+    # `Lens`
+
+    Back to our problem
+
+    ```ts
+    interface Address {
+      city: string
+      street: Street
+    }
+
+    interface Street {
+      num: number
+      name: string
+    }
+    ```
 
     ---
 
@@ -331,7 +434,10 @@
       compose<B>(ab: Lens<A, B>): Lens<S, B> {
         return new Lens(
           s => ab.get(this.get(s)),
-          b => s => this.set(ab.set(b)(this.get(s)))(s)
+          b => s => {
+            const a = ab.set(b)(this.get(s))
+            return this.set(a)(s)
+          }
         )
       }
     }
@@ -510,7 +616,7 @@
 
     # `Prism`
 
-    Definition
+    Implementation
 
     ```ts
     class Prism<S, A> {
@@ -783,8 +889,24 @@
 
     - Free book (italian) https://github.com/gcanti/functional-programming
     - TypeScript library https://github.com/gcanti/monocle-ts
-      </textarea>
+          </textarea>
   <script src="../remark.js">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
