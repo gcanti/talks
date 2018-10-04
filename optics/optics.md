@@ -22,6 +22,12 @@
 
 # Introduction
 
+<center><img src="img/Tweet.png" width="600"></center>
+
+---
+
+# Introduction
+
 Benefits of programming with immutable objects (\*)
 
 - Thread safety
