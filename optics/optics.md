@@ -125,7 +125,7 @@ As we can see working with values deep within the data structure starts to get a
 
 # Functional optics
 
-Functional optics help to manage (read, write, update) immutable data structures in a principled and composable way.
+Functional optics help to **manage** (read, write, modify) **immutable data structures** in a principled and **composable** way.
 
 ---
 
@@ -155,6 +155,15 @@ An **isomorphism** between two types `S` and `A` is a pair of functions
 
 # `Iso`
 
+Laws
+
+- `get . reverseGet = identity`
+- `reverseGet . get = identity`
+
+---
+
+# `Iso`
+
 Implementation
 
 ```ts
@@ -171,27 +180,19 @@ class Iso<S, A> {
 
 # `Iso`
 
-Laws
-
-- `get . reverseGet = identity`
-- `reverseGet . get = identity`
-
-<center><img src="img/Iso.png"></center>
-
----
-
-# `Iso`
-
 Examples
 
 ```ts
-//         S = meters ↓       ↓ A = kilometers
-const mTokm = new Iso<number, number>(
+type meter = number
+type kilometer = number
+type mile = number
+
+const mTokm = new Iso<meter, kilometer>(
   m => m / 1000,
   km => km * 1000
 )
-//        S = kilometers ↓       ↓ A = miles
-const kmToMile = new Iso<number, number>(
+
+const kmToMile = new Iso<kilometer, mile>(
   km => km * 0.621371,
   mile => mile / 0.621371
 )
@@ -213,9 +214,7 @@ class Iso<S, A> {
     )
   }
 }
-```
 
-```ts
 const mToMile = mTokm.compose(kmToMile)
 ```
 
@@ -223,7 +222,7 @@ const mToMile = mTokm.compose(kmToMile)
 
 # `Iso`
 
-Another example
+Another example. Tuples and records are isomorphic
 
 ```ts
 interface Person {
@@ -246,7 +245,7 @@ const person2Tuple = new Iso<Person, Tuple>(
 Such a isomorphism is obvious if `Person` is implemented as a class
 
 ```ts
-class PersonAsClass {
+class Person {
   constructor(
     readonly name: string,
     readonly age: number
@@ -274,7 +273,7 @@ class Iso<S, A> {
 `modify` lifts an _endomorphism_ on `A` to an endomorphism on `S`.
 
 ```ts
-type Endomorphism<T> = (t: T) => T
+type Endomorphism<A> = (a: A) => A
 ```
 
 ---
@@ -284,16 +283,16 @@ type Endomorphism<T> = (t: T) => T
 Lifting
 
 ```ts
-const toUpperCaseTuple = (x: Tuple): Tuple => [
-  x[0].toUpperCase(),
-  x[1]
+const upperFirst = ([name, age]: Tuple): Tuple => [
+  name.toUpperCase(),
+  age
 ]
 
 const person: Person = { name: 'john', age: 20 }
 
-const toUpperCasePerson = person2Tuple.modify(toUpperCase)
+const upperName = person2Tuple.modify(upperFirst)
 
-toUpperCasePerson(person)
+upperName(person)
 // { name: 'JOHN', age: 20 }
 ```
 
@@ -301,10 +300,13 @@ toUpperCasePerson(person)
 
 # Pattern
 
-- model (reading / writing)
+We'll see the same pattern for each optic
+
+- two related types `S` and `A`
+- model (read / write)
 - implementation
 - composition
-- lifting (updating)
+- lifting (modify)
 
 ---
 
@@ -322,7 +324,14 @@ toUpperCasePerson(person)
 
 A lens is a first-class reference to a subpart of some data type.
 
-<center><img src="img/Lens.png" width="400"></center>
+```ts
+interface Address {
+  city: string
+  street: Street // ← focus here
+}
+```
+
+For example if the data type is `Address` we want to focus on its subpart `Street`.
 
 ---
 
@@ -360,7 +369,7 @@ Back to our problem
 ```ts
 interface Address {
   city: string
-  street: Street
+  street: Street // ← focus here
 }
 
 interface Street {
@@ -385,6 +394,24 @@ address.get(a1)
 // => {num: 23, name: "high street"}
 address.set({ num: 23, name: 'main street' })(a1)
 // => {city: "london", street: {num: 23, name: "main street"}}
+```
+
+---
+
+# `Lens`
+
+Back to our problem
+
+```ts
+interface Address {
+  city: string
+  street: Street // ← focus here
+}
+
+interface Street {
+  num: number
+  name: string // ← focus here
+}
 ```
 
 ---
@@ -495,11 +522,7 @@ In our case, the first character of a string is **optional** as a string might b
 
 `Lens`es manage **product types**
 
-(a.k.a. cartesian products)
-
 `Prism`s manage **sum types**
-
-(a.k.a. disjoint unions)
 
 ---
 
@@ -508,7 +531,7 @@ In our case, the first character of a string is **optional** as a string might b
 A sum type
 
 ```ts
-type S =
+type Action =
   | {
       type: 'ADD_TODO'
       text: string
@@ -529,7 +552,10 @@ type S =
 
 # `Prism`
 
-Let's focus on `ADD_TODO` and let `A = string`.
+Let's focus on `ADD_TODO` and let
+
+- `S = Action`
+- `A = string`
 
 Given a `string` we can build an `Action`
 
@@ -547,10 +573,10 @@ const reverseGet = (text: string): Action => ({
 What about the other direction? Can we define the following function?
 
 ```ts
-get: (s: S) => string // ← this is a lie
+get: (action: Action) => string // ← this is a lie
 ```
 
-What if `s` is a `DELETE_TODO`?
+What if `action` is a `DELETE_TODO`?
 
 We need a type that represents the effect of a computation that can fail.
 
@@ -607,7 +633,7 @@ const match = <A, R>(
 Sequencing
 
 ```ts
-const chain = <A, B>(
+const flatMap = <A, B>(
   fa: Option<A>,
   f: (a: A) => Option<B>
 ): Option<B> => match(fa, none, f)
@@ -675,7 +701,7 @@ class Prism<S, A> {
   ...
   compose<B>(ab: Prism<A, B>): Prism<S, B> {
     return new Prism(
-      s => chain(this.getOption(s), a => ab.getOption(a))),
+      s => flatMap(this.getOption(s), a => ab.getOption(a))),
       b => this.reverseGet(ab.reverseGet(b))
     )
   }
@@ -811,7 +837,9 @@ Laws
 Example
 
 ```ts
-const firstLetter = new Optional<string, string>(
+type char = string
+
+const firstLetter = new Optional<string, char>(
   s => (s.length > 0 ? some(s[0]) : none),
   a => s => (s.length > 0 ? a + s.substring(1) : s)
 )
@@ -849,7 +877,7 @@ class Optional<S, A> {
   ...
   compose<B>(ab: Optional<A, B>): Optional<S, B> {
     return new Optional<S, B>(
-      s => chain(this.getOption(s), a => ab.getOption(a)),
+      s => flatMap(this.getOption(s), a => ab.getOption(a)),
       b => s => this.modify(a => ab.set(b)(a))(s)
     )
   }
@@ -893,9 +921,9 @@ class Lens<S, A> {
 Back to our problem
 
 ```ts
-//  address: Lens<Address, Stree>
+//  address: Lens<Address, Street>
 //  street: Lens<Street, string>
-//  firstLetter: Optional<string, string>
+//  firstLetter: Optional<string, char>
 
 const nameFirstLetter: Optional<Address, string> = address
   .compose(street)
